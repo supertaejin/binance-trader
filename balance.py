@@ -10,6 +10,7 @@ import time
 import config
 from datetime import timedelta, datetime
 from BinanceAPI import BinanceAPI
+import numpy as np
 
 class Binance:
 
@@ -91,6 +92,22 @@ class Binance:
                 print('[%s] Open: %s High: %s Low: %s Close: %s' % (datetime.fromtimestamp(kline[0]/1000), kline[1], kline[2], kline[3], kline[4]))
 
         return
+
+    def market_valueSimple(self, symbol, kline_size, dateS, dateF="" ):                 
+        dateS=datetime.strptime(dateS, "%d/%m/%Y %H:%M:%S")
+        
+        if dateF!="":
+            dateF=datetime.strptime(dateF, "%d/%m/%Y %H:%M:%S")
+        else:
+            dateF=dateS + timedelta(seconds=59)
+
+        klines = self.client.get_klines(symbol, kline_size, int(dateS.timestamp()*1000), int(dateF.timestamp()*1000))
+        '''
+        if len(klines)>0:
+            for kline in klines:
+                print('[%s] Open: %s High: %s Low: %s Close: %s' % (datetime.fromtimestamp(kline[0]/1000), kline[1], kline[2], kline[3], kline[4]))
+        '''
+        return klines[0]
     
 try:
 
@@ -107,6 +124,8 @@ try:
         print('6 >> Market value (range)')
         print('-----------------------------')
         print('7 >> Server status')
+        print('-----------------------------')
+        print('11 >> Get Current ETHUSDT Market Value')
         print('-----------------------------')
         print('0 >> Exit')
         print('\nEnter option number:')
@@ -161,6 +180,21 @@ try:
 
         elif option=='7':
             lag=m.server_status()
+
+        elif option=='11': 
+            _prev = 1
+            while True:
+                symbol = "ETHUSDT"
+                now = datetime.now() - timedelta(minutes =1)
+                dateS = "%02d/%02d/%04d %02d:%02d:%02d" % (now.day, now.month, now.year, now.hour, now.minute, now.second)
+
+                #klines=m.market_value(symbol,"1m", dateS)
+                a =m.market_valueSimple(symbol, "1m", dateS)
+                #print (a[1], a[2], a[3], a[4])  # Open / High / Low / Close
+                _curr = (float(a[2])+float(a[3]))/2
+                print ("Curr: {}, Delta: {} \t [{},{},{},{}]".format(_curr, _curr/_prev*100, a[1], a[2], a[3], a[4]))    
+                _prev = _curr
+                time.sleep(5)        
 
         elif option=='0':
             break
